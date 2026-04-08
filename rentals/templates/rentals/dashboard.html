@@ -1,0 +1,87 @@
+{% extends "rentals/base.html" %}
+
+{% block content %}
+  <section class="dashboard-section">
+    <div class="dashboard-inner">
+      <div class="dashboard-header">
+        <div>
+          <p class="dashboard-kicker">
+            Renter dashboard
+          </p>
+          <h1 class="dashboard-title">
+            Welcome, {{ request.user.first_name|default:request.user.username }}.
+          </h1>
+          <p class="dashboard-subtitle">
+            Everything you need for a smooth stay — all in one secure place.
+          </p>
+        </div>
+
+        <div class="dashboard-status">
+          <p style="font-weight: 600; color: #ecfdf5;">Your stay is confirmed.</p>
+          <p>
+            Keep this page private. Do not share screenshots of your access codes on social media.
+          </p>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="dashboard-col">
+          <div class="dashboard-card">
+            <p class="dashboard-card-title">
+              Door entry code
+            </p>
+            <p class="dashboard-card-main">
+              {{ entry_code }}
+            </p>
+            <p class="dashboard-card-text">
+              Enter this code on the keypad by the front door. The lock will auto-lock after 30 seconds.
+            </p>
+          </div>
+
+          <div class="dashboard-card">
+            <p class="dashboard-card-title">
+              Pool &amp; common areas
+            </p>
+            <p class="dashboard-card-main" style="font-size: 1.1rem;">
+              Pool gate code: {{ pool_code }}
+            </p>
+            <p class="dashboard-card-text">
+              Please rinse off sand before entering the pool. Quiet hours are 10pm–8am.
+            </p>
+          </div>
+        </div>
+
+        <div class="dashboard-col">
+          <div class="dashboard-card">
+            <p class="dashboard-card-title">
+              Wi‑Fi
+            </p>
+            <dl class="wifi-list">
+              <div class="wifi-row">
+                <dt class="wifi-label">Network</dt>
+                <dd class="wifi-value">{{ wifi_name }}</dd>
+              </div>
+              <div class="wifi-row">
+                <dt class="wifi-label">Password</dt>
+                <dd class="wifi-value">{{ wifi_password }}</dd>
+              </div>
+            </dl>
+            <p class="wifi-note">
+              If Wi‑Fi drops, power-cycle the router in the hallway closet and wait 2–3 minutes.
+            </p>
+          </div>
+
+          <div class="dashboard-card dashboard-card-accent">
+            <p class="dashboard-card-title">
+              House manual
+            </p>
+            <p class="dashboard-card-text" style="white-space: pre-line; font-size: 0.9rem; color: #e5e7eb;">
+              {{ house_manual }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+

@@ -1,0 +1,111 @@
+{% extends "rentals/base.html" %}
+
+{% block content %}
+  <section class="hero hero-bg">
+    <div class="hero-inner">
+      <div class="hero-main">
+        <p class="hero-kicker">
+          Beachfront Vacation Rental
+        </p>
+        <h1 class="hero-title">
+          Wake up to the sound of waves, not alarms.
+        </h1>
+        <p class="hero-text">
+          Right on the beach, with pools, Pickelball, Mini Golf, and more...
+        </p>
+        <div class="hero-actions">
+          <a
+            href="{% url 'reservations' %}"
+            class="btn btn-primary"
+          >
+            Check Availability
+          </a>
+          <a
+            href="#amenities"
+            class="hero-secondary-link"
+          >
+            Explore amenities
+          </a>
+        </div>
+      </div>
+
+      <div class="hero-aside">
+        <div class="hero-aside-card hero-aside-card--wide">
+          <div class="hero-aside-highlight">
+            <p class="hero-aside-label">
+              Ocean View Units  -- 6+ Guiests -- Right on the beach!
+            </p>
+            <p>
+              Available on 8th, 9th, and 11th Floor with spactacular ocean views
+              Two pools, Pickelball, Mini Golf, Fast Wifi, and more...
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <section id="amenities" class="amenities-section">
+    <div class="amenities-inner">
+      <div class="amenities-header">
+        <div class="amenities-heading">
+          <h2 class="amenities-title">Amenities that feel like a resort, not a rental.</h2>
+          <p class="amenities-subtitle">
+            Thoughtful details from check-in to check-out so you can focus on salty hair and sandy toes.
+          </p>
+        </div>
+        <p class="amenities-note">
+          5-minute walk to local cafés &amp; shops · 30 minutes from the airport
+        </p>
+      </div>
+
+      <div class="amenities-grid">
+        {% for amenity in amenities %}
+          <div class="amenity-card">
+            <p>{{ amenity }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section id="location" class="location-section">
+    <div class="location-inner">
+      <div class="location-copy">
+        <h2 class="location-heading">On the sand. Not “near” it.</h2>
+        <p class="location-text">
+          Step out of the building and your feet are in the dunes. No need to load the car or cross busy streets —
+          just grab the beach cart, follow the private walkover, and you’re there.
+        </p>
+        <p class="location-text">
+          After sunset, stroll to nearby restaurants, grab ice cream on the boardwalk, or watch the stars from
+          the balcony while the waves keep time.
+        </p>
+      </div>
+      <div class="location-side">
+        <div class="location-card">
+          <p class="location-card-title">
+            Approximate distance
+          </p>
+          <ul class="location-list">
+            <li>• 0 minutes to the sand (you’re on it)</li>
+            <li>• 5 minutes to coffee &amp; breakfast spots</li>
+            <li>• 10 minutes to family-friendly restaurants</li>
+            <li>• 30 minutes to the nearest airport</li>
+          </ul>
+        </div>
+        <div class="location-note">
+          <p class="location-note-title">
+            Already booked?
+          </p>
+          <p>
+            Use the email you booked with to register for the renter portal and access your personalized door code,
+            pool access, Wi‑Fi, and house guide.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+

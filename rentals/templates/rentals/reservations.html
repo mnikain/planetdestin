@@ -1,0 +1,222 @@
+{% extends "rentals/base.html" %}
+
+{% block content %}
+  <section class="section-light">
+    <div class="reservations-inner">
+      <header class="reservations-header">
+        <div>
+          <p class="reservations-kicker">Plan your stay</p>
+          <h1 class="reservations-title">Check availability</h1>
+          <p class="reservations-subtitle">
+            Choose your check-in and check-out dates to see units are available.
+          </p>
+        </div>
+      </header>
+      <div style="max-width: 200px;">
+        <form method="post" class="form-layout" action="{% url 'pull_vrbo_calendar' %}">
+          {% csrf_token %}
+          VRBO Status: {% if vrbo_uptodate %}Up to date{% else %}Out of date{% endif %} <button type="submit" class="btn btn-outline form-submit">
+            Pull VRBO Calendar
+          </button>
+        </form>
+      </div>
+      <div class="reservations-layout">
+ 
+        <div class="reservations-form-card">
+          <form method="post" class="form-layout">
+            {% csrf_token %}
+
+            <div class="form-fields">
+              {% for field in form %}
+                <div class="form-field">
+                  <label class="form-field-label">
+                    {{ field.label }}
+                  </label>
+                  {{ field }}
+                  {% if field.errors %}
+                    <p class="form-error">
+                      {{ field.errors|striptags }}
+                    </p>
+                  {% endif %}
+                </div>
+              {% endfor %}
+
+              {% if form.non_field_errors %}
+                <p class="form-error">
+                  {{ form.non_field_errors|striptags }}
+                </p>
+              {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary form-submit">
+              Search availability
+            </button>
+          </form>
+        </div>
+
+        <div class="reservations-results">
+          {% if available_rooms is None %}
+            <p class="reservations-hint">
+              Select your dates and tap “Search availability” to see open units.
+            </p>
+          {% elif available_rooms %}
+            <h2 class="reservations-results-title">Available Units</h2>
+            <ul class="reservations-room-list">
+              {% for room in available_rooms %}
+                <li class="reservations-room-card">
+                  <p id="reservations-room-warning-{{ room.unit }}" class="hidden" style="color: red;">
+                    We will open another tab with pictures and information on VRBO, to get the
+                   discounted price, please return and reserve from here<p>
+                  <div class="reservations-room-main">
+
+                    <div>
+                      <h3 class="reservations-room-name">
+                        {{ room.unit }}
+                      </h3>
+                      <p class="reservations-room-meta">
+                        Sleeps {{ room.sleeps }} guests
+                      </p>
+                    </div>
+                    <div class="reservations-room-actions">                    
+                      <button type="button" id= "goto-vrbo-btn-{{ room.unit }}" class="btn btn-outline goto-vrbo-btn hidden" 
+                        data-info="{{ room.info }}"
+                      >
+                        Continue to VRBO
+                      </button>
+                      <button
+                        id="more-info-btn-{{ room.unit }}"
+                        type="button"
+                        class="btn btn-outline reservations-more-btn"
+                        data-unit="{{ room.unit }}"
+                        data-sleeps="{{ room.sleeps }}"
+                        data-notes="{{ room.notes|default_if_none:'' }}"
+                        data-info="{{ room.info|default_if_none:'' }}"
+                      >
+                        More Info
+                      </button>
+
+                      <form
+                        method="post"
+                        action="{% url 'create_inquiry' %}"
+                        class="reservations-inquiry-form"
+                      >
+                        {% csrf_token %}
+                        <input type="hidden" name="unit" value="{{ room.unit }}" />
+                        <input type="hidden" name="check_in" value="{{ check_in|date:'Y-m-d' }}" />
+                        <input type="hidden" name="check_out" value="{{ check_out|date:'Y-m-d' }}" />
+                        <button type="submit" class="btn btn-primary reservations-discount-btn">
+                          Get Discounted Price
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                  {% if room.notes %}
+                    <p class="reservations-room-notes">
+                      {{ room.notes }}
+                    </p>
+                  {% endif %}
+
+
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="reservations-empty">
+              No rooms are available for those dates. Try adjusting your dates or shortening your stay.
+            </p>
+          {% endif %}
+        </div>
+      </div>
+
+      <section id="unit-detail" class="unit-detail hidden">
+        <div class="unit-detail-inner">
+          <h2 id="unit-detail-name" class="unit-detail-title">
+            Select a unit to see more details
+          </h2>
+          <div class="unit-detail-layout">
+            <div class="unit-detail-image">
+              <!-- Placeholder image region; you can replace src later -->
+              <div class="unit-detail-image-placeholder">
+                Image for this unit will appear here.
+              </div>
+            </div>
+            <div class="unit-detail-content">
+              <p id="unit-detail-meta" class="unit-detail-meta"></p>
+              <p id="unit-detail-notes" class="unit-detail-notes"></p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const detailSection = document.getElementById("unit-detail");
+      const nameEl = document.getElementById("unit-detail-name");
+      const metaEl = document.getElementById("unit-detail-meta");
+      const notesEl = document.getElementById("unit-detail-notes");
+      //const cancelBtn = modal.querySelector(".modal-cancel");
+      //const proceedBtn = modal.querySelector(".modal-proceed");
+
+      let pendingRoom = null;
+
+      function toggleWarning() {
+        unit = pendingRoom.unit;
+        const warning = document.getElementById("reservations-room-warning-" + unit);
+        const vrbo = document.getElementById("goto-vrbo-btn-" + unit);
+        const moreInfo = document.getElementById("more-info-btn-" + unit);
+        warning.classList.toggle("hidden");
+        vrbo.classList.toggle("hidden");
+        moreInfo.classList.toggle("hidden");
+      }
+
+      document.querySelectorAll(".reservations-more-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          pendingRoom = {
+            unit: this.dataset.unit || "",
+            sleeps: this.dataset.sleeps || "",
+            notes: this.dataset.notes || "",
+            info: this.dataset.info || "",
+          };
+          toggleWarning();
+        });
+      });
+
+      document.querySelectorAll(".goto-vrbo-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          window.open(this.dataset.info, "_blank");
+          toggleWarning();
+        });
+      });
+
+      /*
+      function showRoomDetails(room) {
+        const unit = room.unit || "";
+        const sleeps = room.sleeps || "";
+        const notes = room.notes || "";
+
+        nameEl.textContent = "Unit " + unit;
+        metaEl.textContent = sleeps ? "Sleeps " + sleeps + " guests" : "";
+        notesEl.textContent = notes;
+        detailSection.classList.remove("hidden");
+      }
+
+      
+      // Modal interactions
+      cancelBtn.addEventListener("click", closeModal);
+      proceedBtn.addEventListener("click", function () {
+        if (pendingRoom && pendingRoom.info) {
+          window.location.assign(pendingRoom.info);
+          return;
+        }
+
+        // Fallback: if no URL is available, show on-page details
+        if (pendingRoom) showRoomDetails(pendingRoom);
+        closeModal();
+      });
+
+      //modal.querySelector(".modal-backdrop").addEventListener("click", closeModal);
+      */
+    });
+  </script>
+{% endblock %}
+

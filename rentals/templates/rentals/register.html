@@ -1,0 +1,75 @@
+{% extends "rentals/base.html" %}
+
+{% block content %}
+  <section class="section-dark">
+    <div class="auth-inner">
+      <div>
+        <h1 class="auth-heading">Create your renter account</h1>
+        <p class="auth-text">
+          Use the same email or phone number you booked with so we can match your reservation.
+          Once you sign up, you’ll unlock the renter dashboard with door code, pool access,
+          Wi‑Fi details, and a digital house manual.
+        </p>
+
+        <div class="auth-list" style="margin-top: 1.5rem;">
+          <div>
+            <span class="badge badge-emerald">
+              ✓
+            </span>
+            <p>You can use your email or phone number to login (email is required, phone is optional).</p>
+          </div>
+          <div>
+            <span class="badge badge-emerald">
+              ✓
+            </span>
+            <p>Access codes are only visible to signed-in renters.</p>
+          </div>
+          <div>
+            <span class="badge badge-cyan">
+              ✓
+            </span>
+            <p>Update your password at any time from your dashboard.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-panel">
+        <form method="post" class="form-layout">
+          {% csrf_token %}
+
+          {% for field in form %}
+            <div class="form-field">
+              <label class="form-field-label">
+                {{ field.label }}
+              </label>
+              {{ field }}
+              {% if field.help_text %}
+                <p class="form-help">{{ field.help_text|safe }}</p>
+              {% endif %}
+              {% if field.errors %}
+                <p class="form-error">
+                  {{ field.errors|striptags }}
+                </p>
+              {% endif %}
+            </div>
+          {% endfor %}
+
+          <button
+            type="submit"
+            class="btn btn-primary form-submit"
+          >
+            Create account
+          </button>
+
+          <p class="form-footer">
+            Already have an account?
+            <a href="{% url 'login' %}">
+              Log in
+            </a>
+          </p>
+        </form>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
