@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 from datetime import timezone as dt_timezone
+from decouple import config
 
 import django.utils.timezone as django_timezone
 
@@ -72,8 +73,8 @@ DATABASES = {
  #       "ENGINE": "django.db.backends.mysql",
         "ENGINE": "mysql.connector.django",
         "NAME": "u428340312_planetdestin",
-        "USER": "u428340312_planetdestin",
-        "PASSWORD": "Shokoohi41",
+        "USER": config('DB_USER'),
+        "PASSWORD": config('DB_PASSWORD'),
         "HOST": "db.nikain.com",
         "PORT": "3306",
         "OPTIONS": {

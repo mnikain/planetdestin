@@ -11,12 +11,14 @@
     1.6 inquiry creates inquiry but mesasge is not green; also change it so you get out of that page; also if user make multiple inquiries, only keep the last one DONE
 
 # complete the registration page
-    1. color is black, turn it light
-    2. turn the user back to the registration (if they came from there)
-    3. Send an email with the renter request
+    0. create a repository DONE
+    1. color is black, turn it light DONE
+    3. All users are created with 0000, so it won't let any new user , see what's wrong
+    4. turn the user back to the registration (if they came from there)
+    5. Send an email with the renter request
 
 
-    
+
     
 
 
