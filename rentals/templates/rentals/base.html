@@ -48,14 +48,14 @@
               Renter Dashboard
             </a>
             <a
-              href="{% url 'logout' %}"
+              href="{% url 'users:logout' %}"
               class="btn btn-outline"
             >
               Log out
             </a>
           {% else %}
             <a
-              href="{% url 'login' %}"
+              href="{% url 'users:login' %}"
               class="btn btn-outline"
             >
               Log in

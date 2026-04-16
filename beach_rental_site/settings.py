@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rentals",
+    "users"
 ]
 
 
@@ -70,8 +71,8 @@ ASGI_APPLICATION = "beach_rental_site.asgi.application"
 
 DATABASES = {
     "default": {
- #       "ENGINE": "django.db.backends.mysql",
-        "ENGINE": "mysql.connector.django",
+        "ENGINE": "django.db.backends.mysql",
+ #       "ENGINE": "mysql.connector.django",
         "NAME": "u428340312_planetdestin",
         "USER": config('DB_USER'),
         "PASSWORD": config('DB_PASSWORD'),
@@ -123,6 +124,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "dashboard"
 LOGOUT_REDIRECT_URL = "home"
+AUTH_USER_MODEL = "users.CustomUser"
+AUTHENTICATION_BACKENDS = [
+    #"django.contrib.auth.backends.ModelBackend",
+    "users.backends.PhoneOrEmailBackend",
+]
 
 
 RENTER_ENTRY_CODE = os.getenv("RENTER_ENTRY_CODE", "0000")

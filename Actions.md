@@ -1,3 +1,11 @@
+
+#notes:
+    pip install mysqlclient # the other drivers don't work well
+
+
+#authorization
+    in settings.py auth_user_model is set to customuser, so standard functions such as get_user_model, create_user, etc. work
+    
 ## start
     cd /Users/mo/GoogleDrive/dev/planetdestin1/beach_rental_site
     . ../../env/bin/activate
@@ -13,10 +21,12 @@
 # complete the registration page
     0. create a repository DONE
     1. color is black, turn it light DONE
-    3. All users are created with 0000, so it won't let any new user , see what's wrong
     4. turn the user back to the registration (if they came from there)
     5. Send an email with the renter request
 
+## created a new user app
+    tutorial: https://www.youtube.com/watch?v=hN0xbn4sENw&t=2s
+    python manage.py startapp users
 
 
     
