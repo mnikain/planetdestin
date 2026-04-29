@@ -12,14 +12,7 @@
           </p>
         </div>
       </header>
-      <div style="max-width: 200px;">
-        <form method="post" class="form-layout" action="{% url 'pull_vrbo_calendar' %}">
-          {% csrf_token %}
-          VRBO Status: {% if vrbo_uptodate %}Up to date{% else %}Out of date{% endif %} <button type="submit" class="btn btn-outline form-submit">
-            Pull VRBO Calendar
-          </button>
-        </form>
-      </div>
+
       <div class="reservations-layout">
  
         <div class="reservations-form-card">
@@ -66,7 +59,7 @@
                 <li class="reservations-room-card">
                   <p id="reservations-room-warning-{{ room.unit }}" class="hidden" style="color: red;">
                     We will open another tab with pictures and information on VRBO, to get the
-                   discounted price, please return and reserve from here<p>
+                   discounted price, please return and reserve from here </p>
                   <div class="reservations-room-main">
 
                     <div>

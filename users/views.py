@@ -4,23 +4,27 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.shortcuts import redirect
-from rentals.views import _complete_pending_inquiry
 from users.forms import UserRegistrationForm
 from django.db import IntegrityError
+from django.contrib.auth import get_user_model
 
 PENDING_INQUIRY_SESSION_KEY = "pending_inquiry"
+
+
+def test_view(request: HttpRequest) -> HttpResponse:
+    user = get_user_model().objects.all()
+    user_list = []
+    
+    for user in user:
+        user_list.append(user)
+    return HttpResponse("Users: " + str(user_list))    
 
 
 # Create your views here.
 def login_view(request: HttpRequest) -> HttpResponse:
     if request.user.is_authenticated:
-        if _complete_pending_inquiry(request):
-            messages.success(
-                request,
-                "Your discounted price inquiry has been recorded. We'll follow up with details.",
-            )
-            return redirect("reservations")
-        return redirect("dashboard")
+        next = request.GET.get("next", "dashboard")
+        return redirect(next)
 
     if request.method == "POST":
         form = AuthenticationForm(request, data=request.POST)
@@ -30,19 +34,19 @@ def login_view(request: HttpRequest) -> HttpResponse:
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
-                if _complete_pending_inquiry(request):
-                    messages.success(
-                        request,
-                        "You are now logged in, and your discounted price inquiry was submitted.",
-                    )
-                    return redirect("reservations")
-                messages.success(request, "You are now logged in.")
-                return redirect("dashboard")
+                next = request.GET.get("next", "dashboard")
+                return redirect(next)
+            else:
+                messages.error(request, "Invalid username or password.")
+                return redirect("users:login")
+        else:
             messages.error(request, "Invalid username or password.")
+            return redirect("users:login")
     else:
+        next = request.GET.get("next", "dashboard")
         form = AuthenticationForm()
 
-    return render(request, "users/login.html", {"form": form})
+    return render(request, "users/login.html", {"form": form, "next": next})
 
 def logout_view(request: HttpRequest) -> HttpResponse:
     logout(request)
@@ -50,15 +54,6 @@ def logout_view(request: HttpRequest) -> HttpResponse:
     return redirect("home")
 
 def register_view(request: HttpRequest) -> HttpResponse:
-    if request.user.is_authenticated:
-        if _complete_pending_inquiry(request):
-            messages.success(
-                request,
-                "Your discounted price inquiry has been recorded. We'll follow up with details.",
-            )
-            return redirect("reservations")
-        return redirect("dashboard")
-
     if request.method == "POST":
         form = UserRegistrationForm(request.POST)
         if form.is_valid():
@@ -72,14 +67,9 @@ def register_view(request: HttpRequest) -> HttpResponse:
                     messages.error(request, f"Error creating account: {e}, please contact support.")
                     return redirect("register")
             login(request, user)
-            if _complete_pending_inquiry(request):
-                messages.success(
-                    request,
-                    "Account created. Your discounted price inquiry has been recorded.",
-                )
-                return redirect("reservations")
             messages.success(request, "Your account has been created. Welcome!")
-            return redirect("dashboard")
+            next = request.GET.get("next", "dashboard")
+            return redirect(next)
     else:
         form = UserRegistrationForm()
 

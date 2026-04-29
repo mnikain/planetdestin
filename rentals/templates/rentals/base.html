@@ -40,6 +40,20 @@
           <a href="{% url 'home' %}#location" class="nav-link nav-link-secondary">
             Location
           </a>
+          {% if user.is_superuser %}
+            <a
+              href="{% url 'admin:index' %}"
+              class="btn btn-primary"
+            >
+              Admin
+            </a>
+            <a
+            href="{% url 'operations' %}"
+            class="btn btn-primary"
+          >
+            Ops
+          </a>
+          {% endif %}
           {% if user.is_authenticated %}
             <a
               href="{% url 'dashboard' %}"
@@ -61,7 +75,7 @@
               Log in
             </a>
             <a
-              href="{% url 'register' %}"
+              href="{% url 'users:register' %}"
               class="btn btn-primary btn-primary-header"
             >
               Become a Renter

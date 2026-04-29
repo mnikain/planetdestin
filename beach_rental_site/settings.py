@@ -130,6 +130,14 @@ AUTHENTICATION_BACKENDS = [
     "users.backends.PhoneOrEmailBackend",
 ]
 
+SESSION_EXPIRE_SECONDS = 900 # 15 minutes
+SESSION_EXPIRE_AFTER_LAST_ACTIVITY = True
+SESSION_TIMEOUT_REDIRECT = "login"
+SESSION_COOKIE_AGE = 900 # 15 minutes
+SESSION_COOKIE_SECURE = False
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+
 
 RENTER_ENTRY_CODE = os.getenv("RENTER_ENTRY_CODE", "0000")
 POOL_ACCESS_CODE = os.getenv("POOL_ACCESS_CODE", "1111")
@@ -142,3 +150,23 @@ HOUSE_MANUAL_TEXT = os.getenv(
     "when the A/C is running.",
 )
 
+NOTIFICATION_EMAIL_LIST = os.getenv("NOTIFICATION_EMAIL_LIST", "mo.nikain@yahoo.com").split(",")
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.mail.yahoo.com")
+EMAIL_PORT = os.getenv("EMAIL_PORT", 587)
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", True)
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "mo.nikain@yahoo.com")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "ekqcfbijqjrjysek")
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_TIMEOUT = 10
+EMAIL_SSL_CERTFILE = None
+EMAIL_SSL_KEYFILE = None
+EMAIL_SSL_CA_CERT = None
+EMAIL_SSL_CA_BUNDLE = None
+MIN_EMAIL_INTERVAL = 30 * 60 # 30 minutes minimum interval between emails
+
+MIN_VRBO_CALENDAR_PULL_INTERVAL = 60 * 60 # 1 hour minimum interval between vrbo calendar pulls
+
+# accounting spreadsheet constants, and how many weeks back do we import
+ACCOUNTING_PASSWORD = os.getenv("ACCOUNTING_PASSWORD")
+ACCOUNTING_SHEET = os.getenv("ACCOUNTING_SHEET")
+WEEK_WINDOW = int(os.getenv("WEEK_WINDOW", 4))

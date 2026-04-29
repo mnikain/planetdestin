@@ -36,6 +36,10 @@
       <div class="auth-panel">
         <form method="post" class="form-layout">
           {% csrf_token %}
+          
+          {% if next %}
+            <input type="hidden" name="next" value="{{ next }}">
+          {% endif %}
 
           {% for field in form %}
             <div class="form-field">

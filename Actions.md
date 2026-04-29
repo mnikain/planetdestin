@@ -11,21 +11,22 @@
     . ../../env/bin/activate
     python manage.py runserver
 
-# finish showing free units 
-    1. show available units - DONE
-    1.4 Checkout date is one before - DONE
-    1.5 add additional info about each unit - DONE
-    1.55 add pictures and stuff to the additional info  DONE
-    1.6 inquiry creates inquiry but mesasge is not green; also change it so you get out of that page; also if user make multiple inquiries, only keep the last one DONE
+# user management
 
-# complete the registration page
-    0. create a repository DONE
-    1. color is black, turn it light DONE
-    4. turn the user back to the registration (if they came from there)
-    5. Send an email with the renter request
+    1. Get all the links working (login back to reservation) DONE
+    2. add hthe property number to the unit information (VRBO CSV download uses it) Done
+    3. add a GUI to import the csv's (should be able do one or more) DONE
+    4. Add a report that says pull is needed (no email since also does it regularly)
+    5. if the user is created through spreadsheet, then send them an email (if they have one)
+        with a tmp password and let them know (have a field that says new user); if they didn't have
+        an email or need to get in, add a button to send an email
 
-## created a new user app
-    tutorial: https://www.youtube.com/watch?v=hN0xbn4sENw&t=2s
+# PRODUCTION CHECKLIST
+    1. Set SESSION_COOKIE_SECURE to true in settings.py
+
+   
+
+    User app tutorial : https://www.youtube.com/watch?v=hN0xbn4sENw&t=2s
     python manage.py startapp users
 
 

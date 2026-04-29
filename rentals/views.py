@@ -1,21 +1,53 @@
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import AuthenticationForm
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
+from datetime import datetime, time, timedelta
+from django.core.mail import send_mail
+from django.db.models import Q
+from django.utils import timezone
+from django.urls import reverse
+from django.core.cache import cache
 
-from datetime import datetime
+from beach_rental_site.settings import LOGIN_URL
 
-from .forms import RenterRegistrationForm, ReservationSearchForm
-from .models import Reservation, Units
+from .forms import ReservationSearchForm
+from .models import Codes, Reservation, Units
 import requests
 from icalendar import Calendar
-from django.db import IntegrityError
+import uuid
+import pandas as pd
+import threading
+import io
+import msoffcrypto
+import re
+from django.contrib.auth import get_user_model
 
 PENDING_INQUIRY_SESSION_KEY = "pending_inquiry"
+User = get_user_model()
+
+def send_email(subject: str, message: str):
+    for email in settings.NOTIFICATION_EMAIL_LIST:
+        send_mail(subject, message, settings.EMAIL_HOST_USER, [email], fail_silently=False)
+
+def send_inquiry_email():
+    # check cache to see if we have already sent the email within the past 30 minutes
+    if cache.get("last_inquiry_email_sent"):
+        return None
+    cache.set("last_inquiry_email_sent", timezone.now(), timeout=settings.MIN_EMAIL_INTERVAL)
+    try:
+        #include all inquiries for all units
+        inquiries = Reservation.objects.filter(status="inquiry")
+        message = "New inquiries:\n"
+        for inquiry in inquiries:
+            email = inquiry.customer.email if inquiry.customer else "Unknown"
+            message += f"{inquiry.unit} - {inquiry.created_at.strftime('%Y-%m-%d %H:%M:%S')} - {email} - {inquiry.check_in} to {inquiry.check_out}\n"
+        send_email("New inquiries", message)
+    except Exception as e:
+        return f"Error sending inquiry email: {e}"
+    return None
 
 
 def _build_inquiry_payload(request: HttpRequest):
@@ -37,35 +69,6 @@ def _build_inquiry_payload(request: HttpRequest):
         "check_in": check_in.isoformat(),
         "check_out": check_out.isoformat(),
     }, None
-
-
-def _create_inquiry_from_payload(payload: dict) -> None:
-    check_in = datetime.fromisoformat(payload["check_in"]).date()
-    check_out = datetime.fromisoformat(payload["check_out"]).date()
-    unit = payload["unit"]
-    uid = f"inquiry-{unit}-{check_in.isoformat()}-{check_out.isoformat()}"
-
-    Reservation.objects.get_or_create(
-        uid=uid,
-        defaults={
-            "unit": unit,
-            "check_in": check_in,
-            "check_out": check_out,
-            "status": "inquiry",
-            "guests": 0,
-            "customer": None,
-            "notes": "Discounted price inquiry created from website.",
-        },
-    )
-
-
-def _complete_pending_inquiry(request: HttpRequest) -> bool:
-    payload = request.session.pop(PENDING_INQUIRY_SESSION_KEY, None)
-    if not payload:
-        return False
-    _create_inquiry_from_payload(payload)
-    return True
-
 
 def home(request: HttpRequest) -> HttpResponse:
     amenities = [
@@ -122,8 +125,13 @@ def pull_vrbo_calendar(request: HttpRequest) -> HttpResponse:
     to_create = []
     by_uid = {}
 
+    errors = []
     for unit in units:
-        response = requests.get(unit.url, timeout=10)
+        try:
+            response = requests.get(unit.url, timeout=10)
+        except requests.exceptions.RequestException as e:
+           errors.append(f"Error pulling calendar for {unit.unit}: {e}")
+           continue
         response.raise_for_status()
         cal = Calendar.from_ical(response.text)
         for component in cal.walk():
@@ -153,6 +161,7 @@ def pull_vrbo_calendar(request: HttpRequest) -> HttpResponse:
                 "customer": None,
                 "notes": notes,
             }
+
 
     if by_uid:
         uids = list(by_uid.keys())
@@ -187,9 +196,11 @@ def pull_vrbo_calendar(request: HttpRequest) -> HttpResponse:
                 ["unit", "check_in", "check_out", "status", "guests", "customer", "notes"],
             )
 
-    vrbo_uptodate = True
-
-    return reservation_search(request, vrbo_uptodate=vrbo_uptodate)
+    if errors:
+        messages.error(request, "\n".join(errors))
+    else:
+        messages.success(request, "VRBO calendar has been pulled successfully.")    
+    return render(request, "rentals/operations.html", {}) 
 
 def reservation_search(request: HttpRequest, vrbo_uptodate: bool = False) -> HttpResponse:
     available_units = None
@@ -203,6 +214,10 @@ def reservation_search(request: HttpRequest, vrbo_uptodate: bool = False) -> Htt
             check_out = form.cleaned_data["check_out"]
             available_units = get_available_units(check_in, check_out)
     else:
+        #also kick off the vrbo calendar pull in a thread if none ran within the last 30 minutes
+        if not cache.get("last_vrbo_calendar_pull"):
+            threading.Thread(target=pull_vrbo_calendar).start()    
+            cache.set("last_vrbo_calendar_pull", timezone.now(), timeout=settings.MIN_VRBO_CALENDAR_PULL_INTERVAL)
         form = ReservationSearchForm()
 
     context = {
@@ -214,6 +229,34 @@ def reservation_search(request: HttpRequest, vrbo_uptodate: bool = False) -> Htt
     }
     return render(request, "rentals/reservations.html", context)
 
+
+def _complete_pending_inquiry(request: HttpRequest) -> HttpResponse:
+    payload = request.session.pop(PENDING_INQUIRY_SESSION_KEY, None)
+    try:
+        Reservation.objects.get_or_create(
+            uid=str(uuid.uuid4()),
+            defaults={
+                "unit": payload["unit"],
+                "check_in": datetime.fromisoformat(payload["check_in"]).date(),
+                "check_out": datetime.fromisoformat(payload["check_out"]).date(),
+                "status": "inquiry",
+                "guests": 0,
+                "customer": request.user,
+                "notes": "Discounted price inquiry created from website.",
+            },
+        )
+    except Exception as e:
+        messages.error(request, f"Sorry for the hassle! Having difficulty creating your inquiry, would you call us to take care of it for you?: {e}")
+        return redirect("reservations")
+
+    error = send_inquiry_email()
+    #TODO add some logging for the error
+    if error:
+        print(error)
+    messages.success(request, "Your discounted price inquiry has been recorded. We'll follow up with details.")
+
+    #at this point, the user is authenticated, so we can create the inquiry and send him to the dashboard
+    return redirect("dashboard")
 
 @require_POST
 def create_inquiry(request: HttpRequest) -> HttpResponse:
@@ -227,102 +270,207 @@ def create_inquiry(request: HttpRequest) -> HttpResponse:
 
     if not request.user.is_authenticated:
         request.session[PENDING_INQUIRY_SESSION_KEY] = payload
-        messages.info(request, "Create an account to finish your discounted price inquiry.")
-        return redirect("register")
+        messages.info(request, "Login or create an account to finish your discounted price inquiry.")
+        login_url = reverse("users:login")
+        return redirect(f"{login_url}?next={reverse('_complete_pending_inquiry')}")
+    else:
+        return _complete_pending_inquiry(request)
 
-    _create_inquiry_from_payload(payload)
+ 
 
-    messages.success(
-        request,
-        "Your discounted price inquiry has been recorded. We'll follow up with details.",
+
+
+def _aware_local(dt: datetime) -> datetime:
+    tz = timezone.get_current_timezone()
+    if timezone.is_naive(dt):
+        return timezone.make_aware(dt, tz)
+    return timezone.localtime(dt, tz)
+
+
+def _active_codes_queryset(unit: Units):
+    today = timezone.localdate()
+    return Codes.objects.filter(unit=unit).filter(
+        Q(activation_date__isnull=True) | Q(activation_date__lte=today),
+        Q(expiration_date__isnull=True) | Q(expiration_date__gte=today),
     )
-    return redirect("reservations")
-
-
-def register_view(request: HttpRequest) -> HttpResponse:
-    if request.user.is_authenticated:
-        if _complete_pending_inquiry(request):
-            messages.success(
-                request,
-                "Your discounted price inquiry has been recorded. We'll follow up with details.",
-            )
-            return redirect("reservations")
-        return redirect("dashboard")
-
-    if request.method == "POST":
-        form = RenterRegistrationForm(request.POST)
-        if form.is_valid():
-            try:
-                user = form.save()
-            except IntegrityError as e:
-                if "Duplicate entry" in str(e.args[1]):
-                    messages.error(request, "Email or phone number already in use.")
-                    return redirect("register") 
-                else:
-                    messages.error(request, f"Error creating account: {e}, please contact support.")
-                    return redirect("register")
-            login(request, user)
-            if _complete_pending_inquiry(request):
-                messages.success(
-                    request,
-                    "Account created. Your discounted price inquiry has been recorded.",
-                )
-                return redirect("reservations")
-            messages.success(request, "Your account has been created. Welcome!")
-            return redirect("dashboard")
-    else:
-        form = RenterRegistrationForm()
-
-    return render(request, "rentals/register.html", {"form": form})
-
-
-def login_view(request: HttpRequest) -> HttpResponse:
-    if request.user.is_authenticated:
-        if _complete_pending_inquiry(request):
-            messages.success(
-                request,
-                "Your discounted price inquiry has been recorded. We'll follow up with details.",
-            )
-            return redirect("reservations")
-        return redirect("dashboard")
-
-    if request.method == "POST":
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            username = form.cleaned_data.get("username")
-            password = form.cleaned_data.get("password")
-            user = authenticate(request, username=username, password=password)
-            if user is not None:
-                login(request, user)
-                if _complete_pending_inquiry(request):
-                    messages.success(
-                        request,
-                        "You are now logged in, and your discounted price inquiry was submitted.",
-                    )
-                    return redirect("reservations")
-                messages.success(request, "You are now logged in.")
-                return redirect("dashboard")
-            messages.error(request, "Invalid username or password.")
-    else:
-        form = AuthenticationForm()
-
-    return render(request, "rentals/login.html", {"form": form})
-
-
-def logout_view(request: HttpRequest) -> HttpResponse:
-    logout(request)
-    messages.info(request, "You have been logged out.")
-    return redirect("home")
 
 
 @login_required
 def dashboard(request: HttpRequest) -> HttpResponse:
+    today = timezone.localdate()
+    now = timezone.now()
+
+    confirmed_records = (
+        Reservation.objects.filter(
+            customer=request.user,
+            status="confirmed",
+            check_out__gte=today,
+        )
+        .select_related("customer")
+        .order_by("check_in")
+    )
+    active_inquiries = Reservation.objects.filter(
+        customer=request.user,
+        status="inquiry",
+        check_out__gte=today,
+    ).order_by("check_in")
+
+    reservation = None
+    check_in_moment = None
+    checkout_moment = None
+    codes_visible_after = None
+    show_codes = False
+    too_early_for_codes = False
+    unit_obj = None
+    code_by_type: dict[str, str] = {}
+
+    # Pick the first confirmed reservation that has not passed checkout time.
+    for candidate in confirmed_records:
+        candidate_check_in = _aware_local(datetime.combine(candidate.check_in, time(15, 0)))
+        candidate_checkout = _aware_local(datetime.combine(candidate.check_out, time(11, 0)))
+        if now >= candidate_checkout:
+            continue
+
+        reservation = candidate
+        check_in_moment = candidate_check_in
+        checkout_moment = candidate_checkout
+        codes_visible_after = check_in_moment - timedelta(hours=48)
+        show_codes = codes_visible_after <= now < checkout_moment
+        too_early_for_codes = now < codes_visible_after
+        break
+
+    if show_codes and reservation:
+        unit_obj = Units.objects.filter(unit=reservation.unit).first()
+        if unit_obj:
+            for row in _active_codes_queryset(unit_obj):
+                code_by_type[row.ctype] = row.value
+
     context = {
-        "entry_code": settings.RENTER_ENTRY_CODE,
-        "pool_code": settings.POOL_ACCESS_CODE,
-        "wifi_name": settings.WIFI_NETWORK_NAME,
-        "wifi_password": settings.WIFI_PASSWORD,
-        "house_manual": settings.HOUSE_MANUAL_TEXT,
+        "reservation": reservation,
+        "active_inquiries": active_inquiries,
+        "show_codes": show_codes,
+        "too_early_for_codes": too_early_for_codes,
+        "codes_visible_after": codes_visible_after,
+        "checkout_moment": checkout_moment,
+        "unit_obj": unit_obj,
+        "code_by_type": code_by_type,
+        "entry_code": code_by_type.get("entry") or settings.RENTER_ENTRY_CODE,
+        "pool_code": code_by_type.get("pool") or settings.POOL_ACCESS_CODE,
+        "pickleball_code": code_by_type.get("pickleball") or settings.POOL_ACCESS_CODE,
+        "wifi_name": code_by_type.get("wifi-ssid") or settings.WIFI_NETWORK_NAME,
+        "wifi_password": code_by_type.get("wifi-password") or settings.WIFI_PASSWORD,
+        "house_manual": code_by_type.get("checkin-checkout") or settings.HOUSE_MANUAL_TEXT,
     }
     return render(request, "rentals/dashboard.html", context)
+
+def operations(request: HttpRequest) -> HttpResponse:
+    return render(request, "rentals/operations.html", {})
+
+
+def _split_name(name_str):
+    """
+    Extracts the first and last name from a string, handling titles, 
+    suffixes, middle initials, and dual-person names.
+    """
+    if not name_str:
+        return None, None
+
+    # 1. Remove common titles and suffixes (case-insensitive)
+    # This cleans "Dr. Jane Doe Jr." -> "Jane Doe"
+    noise = r'\b(Mr|Ms|Mrs|Miss|Dr|Prof|Sr|Jr|III|II|IV|PhD|MD)\b\.?'
+    clean_name = re.sub(noise, '', name_str, flags=re.IGNORECASE).strip()
+    
+    # 2. Handle "Person A and Person B Lastname"
+    # Matches: "Alice and Bob Johnson" or "Alice & Bob Johnson"
+    # Logic: Capture the very first name and the very last name.
+    dual_pattern = r'^([\w-]+)\s+(?:and|&)\s+[\w-]+\s+([\w-]+)$'
+    dual_match = re.search(dual_pattern, clean_name, re.IGNORECASE)
+    if dual_match:
+        return dual_match.group(1), dual_match.group(2)
+
+    # 3. Standard parsing
+    # Split by whitespace and filter out any empty strings
+    parts = clean_name.split()
+    
+    if len(parts) == 0:
+        return None, None
+    if len(parts) == 1:
+        return parts[0], None
+    
+    # In "First Middle Last" or "First M. Last", 
+    # the first element is the First Name and the last is the Last Name.
+    first_name = parts[0]
+    last_name = parts[-1]
+    
+    return first_name, last_name
+
+
+def upload_accounting_file(request: HttpRequest) -> HttpResponse:
+# Create a temporary, in-memory file-like object
+    if request.method == "POST":
+        decrypted_workbook = io.BytesIO()
+        f = request.FILES["excel_file"]
+        office_file = msoffcrypto.OfficeFile(f)
+        office_file.load_key(password=settings.ACCOUNTING_PASSWORD)
+        office_file.decrypt(decrypted_workbook)
+
+        columns = {'first_name': 'first_name',
+                'last_name': 'last_name',
+                'DATE': 'checkin', 
+                'UNIT': 'unit', 
+                'GUEST RESERVATION ID': 'resid', 
+                'GUEST EMAIL': 'email',
+                'GUEST PHONE': 'phone'}
+        # first and last name will be extracted from DESCRIPTION and don't yet exist so has to be here too
+        str_columns = {x: str for x in columns.keys() if x not in ['first_name', 'last_name', 'DATE']}
+
+        # Now use pandas or openpyxl to read the decrypted file
+        # Example with Pandas:
+        df = pd.read_excel(decrypted_workbook, sheet_name=settings.ACCOUNTING_SHEET, converters=str_columns)
+
+        #fix the date so missing dates won't error out (but will get filtered)
+        df['DATE'] = pd.to_datetime(df['DATE'], errors='coerce')
+        cutoff_date = timezone.localdate() - timedelta(weeks=settings.WEEK_WINDOW)
+        cutoff_ts = pd.Timestamp(cutoff_date)
+        df = df[(df['CATEGORY'] == 'Rental Income') & (df['DATE'] >= cutoff_ts)]
+        df[['first_name','last_name'] ] = pd.DataFrame(
+                [_split_name(x) for x in df['DESCRIPTION']], index=df.index)
+
+        #get rid of the unused columns and rename to our column names
+        df = df[columns.keys()]
+        df = df.rename(columns={x[0]: x[1] for x in columns.items() if x[0] != x[1]})
+
+        #find reservation objects that have the same unit name and checkin dates and update those reservations with the new information otherwise create new reservations
+        count = 0
+        new_reservation_count = 0
+        new_user_count = 0
+        for index, row in df.iterrows():
+            reservation = Reservation.objects.filter(unit=row['unit'], check_in=row['checkin']).first()
+            user = User.objects.filter(Q(email=row['email']) | Q(phone=row['phone'])).first()
+            if not user:
+                #create a user object with the email and phone number
+                user = User.objects.create(
+                    email=row['email'],
+                    phone=row['phone'],
+                    first_name=row['first_name'],
+                    last_name=row['last_name'],
+                )
+                new_user_count += 1
+            if reservation:
+                reservation.customer = user
+                reservation.save()
+                count += 1
+            else:
+                Reservation.objects.create(
+                    unit=row['unit'],
+                    check_in=row['checkin'],
+                    check_out=row['checkin'],  # spreadsheet doesn't have check out date, put it the same so we can check later
+                    customer=user,
+                    notes=f"Imported from accounting spreadsheet for {row['first_name']} {row['last_name']}",
+                    status="review",
+                )
+                new_reservation_count += 1
+            
+        messages.success(request, f"Updated: {count}, added: {new_reservation_count}, new users: {new_user_count}, total records: {len(df)}")
+        return render(request, "rentals/operations.html", {})
 

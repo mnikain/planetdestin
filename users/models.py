@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser,BaseUserManager
-from phonenumber_field.formfields import PhoneNumberField
 from django import forms
 
 
@@ -18,6 +17,9 @@ class CustomUserManager(BaseUserManager):
     def create_superuser(self, email, phone, first_name, last_name, password=None):
         user = self.create_user(email, phone, first_name, last_name, password)
         user.is_admin = True
+        user.is_staff = True
+        user.is_superuser = True
+        user.is_active = True
         user.save(using=self._db)
         return user
 
