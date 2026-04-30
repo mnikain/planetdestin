@@ -17,10 +17,14 @@ SECRET_KEY = os.getenv(
     "django-insecure-change-me-for-production",
 )
 
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 DEBUG = True
 
-ALLOWED_HOSTS: list[str] = ["127.0.0.1", "localhost", "192.168.1.80", "72.61.78.9"]
-
+ALLOWED_HOSTS: list[str] = ["127.0.0.1", "localhost", "test.planetdestin.com", "192.168.1.80", "72.61.78.9"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",

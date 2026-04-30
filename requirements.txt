@@ -1,3 +1,9 @@
 django>=5.0,<6.0
 django-phonenumber-field[phonenumbers]
-decouple
+python-decouple
+mysqlclient
+pandas
+msoffcrypto-tool
+django-phonenumber-field[phonenumbers]
+icalendar
+

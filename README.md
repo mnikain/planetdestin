@@ -1,5 +1,33 @@
 ## Beachfront Vacation Rental Website
 
+### production notes
+  update .env 
+  build static files
+    python manage.py collectstatic
+
+  update nginx (see nginx.conf in the etc directory of repository)
+  put the django user and the www-data user in the same group and change the staticfiles directory to be owned by the group
+  
+    sudo groupadd webapp
+    sudo usermod -aG webapp www-data
+    sudo usermod -aG webapp mo
+    sudo chgrp -R webapp staticfiles
+
+  for certificate do the following:
+    sudo /opt/certbot/bin/pip install certbot certbot-nginx
+    cp env/bin/certbot /usr/bin/
+    sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
+
+  adjust dango settings for cert
+    
+    in settings.py
+    SECURE_SSL_REDIRECT = True – Forces all connections to HTTPS within Django.
+    SESSION_COOKIE_SECURE = True – Ensures session cookies are only sent over HTTPS.
+    CSRF_COOKIE_SECURE = True – Ensures CSRF cookies are only sent over HTTPS.  
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') – Tells Django that the proxy (Nginx) is handling the SSL termination.
+    -- make sure the test.planetdestin.com is in the ALLOWED_HOSTS
+
+
 This is a small Django-powered website for a beachfront vacation rental company.
 It includes:
 
