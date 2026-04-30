@@ -12,19 +12,26 @@ if not hasattr(django_timezone, "utc"):
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-SECRET_KEY = os.getenv(
-    "DJANGO_SECRET_KEY",
-    "django-insecure-change-me-for-production",
-)
+PRODUCTION = os.getenv("PRODUCTION", False)
 
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+if PRODUCTION:
+    DEBUG = False
+    ALLOWED_HOSTS: list[str] = ["127.0.0.1", "localhost", "test.planetdestin.com", "192.168.1.80", "72.61.78.9"]
+    SECRET_KEY = os.getenv(
+        "DJANGO_SECRET_KEY",
+    )
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+else:
+    DEBUG = True
+    ALLOWED_HOSTS: list[str] = ["127.0.0.1", "localhost",  "192.168.1.80", "72.61.78.9"]
+    SECRET_KEY = os.getenv(
+        "DJANGO_SECRET_KEY",
+        "django-insecure-change-me-for-production",
+    )
 
-DEBUG = True
-
-ALLOWED_HOSTS: list[str] = ["127.0.0.1", "localhost", "test.planetdestin.com", "192.168.1.80", "72.61.78.9"]
 
 INSTALLED_APPS = [
     "django.contrib.admin",

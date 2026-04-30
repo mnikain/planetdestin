@@ -34,6 +34,25 @@
       </div>
 
       <div class="auth-panel">
+
+        {% if show_temp_password_option %}
+          <hr style="margin: 1.25rem 0; border-color: #cbd5e1;" />
+          <p class="form-help" style="font-size: 0.85rem; font-weight: bold;">
+            It looks like this email or phone already has an account (either by a user or auto created through a reservation).
+            Want us to send a temporary password to the account email?
+          </p>
+          <form method="post" class="form-layout" style="margin-top: 0.75rem;">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="send_temp_password" />
+            <input type="hidden" name="email" value="{{ existing_email }}" />
+            <input type="hidden" name="phone" value="{{ existing_phone }}" />
+            <button type="submit" class="btn btn-primary form-submit">
+              Send temporary password email
+            </button>
+          </form>
+          <br />
+        {% endif %}
+
         <form method="post" class="form-layout">
           {% csrf_token %}
           
@@ -72,6 +91,7 @@
             </a>
           </p>
         </form>
+
       </div>
     </div>
   </section>
