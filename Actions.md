@@ -12,18 +12,7 @@
     python manage.py runserver
 
 # user management
-
-    1. Get all the links working (login back to reservation) DONE
-    2. add hthe property number to the unit information (VRBO CSV download uses it) Done
-    3. add a GUI to import the csv's (should be able do one or more) DONE
-    
-    4. Phone numbers are not properly formatted when added to users from spreadsheet  DONE
-    5. if a user exists but has no password, then offer to send them email with the password DONE
-    6. Handle the phone number situation (created from spreadsheet may not match the user, but key on email ) DONE
-
     8. Reset emails sent to me right now, change it later to the customer
-
-    4. Add a report that says pull is needed (no email since also does it regularly) -  Admin screen shoudl show that
 
 
 # Deferred items/ QUestioms

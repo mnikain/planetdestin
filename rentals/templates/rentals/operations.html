@@ -7,9 +7,20 @@
       <h1 class="operations-title">Operations</h1>
 
       <div class="operations-actions">
-        <a href="{% url 'pull_vrbo_calendar' %}" class="btn btn-primary">
-          Refresh VRBO Calendar
-        </a>
+        <div class="operations-vrbo-line">
+          <a href="{% url 'pull_vrbo_calendar' %}" class="btn btn-primary operations-button">
+            Refresh VRBO Calendar
+          </a>
+          {% if vrbo_last_pull_at %}
+            <span class="operations-vrbo-last-pull">
+              Last pulled {{ vrbo_last_pull_at|date:"M j, Y" }} at {{ vrbo_last_pull_at|time:"g:i A" }}
+            </span>
+          {% else %}
+            <span class="operations-vrbo-last-pull operations-vrbo-last-pull--muted">
+              Last pull: not recorded yet
+            </span>
+          {% endif %}
+        </div>
       </div>
 
       <div class="operations-actions">
@@ -21,18 +32,20 @@
         >
           {% csrf_token %}
           <span class="operations-upload-row">
-            <label for="excel_file" class="btn btn-primary" role="button">
+            <label for="excel_file" class="btn btn-primary operations-button" role="button">
               <span id="selected-file-name">Upload accounting spreadsheet</span>
             </label>
             <input type="file" name="excel_file" id="excel_file" class="material-upload-input" />
-            <button type="submit" class="btn operations-upload-submit material-symbols-outlined material-upload-icon">upload_file</button>
+            <button type="submit" class="btn btn-primary operations-upload-submit" aria-label="Upload" style="display: none;" id="operations-upload-submit">
+              <span class="material-symbols-outlined operations-upload-submit-icon" >upload_file</span>
+            </button>
           </span>
 
         </form>
       </div>
 
       <div class="operations-actions">
-        <a href="{% url 'send_new_user_emails' %}" class="btn btn-primary">
+        <a href="{% url 'send_new_user_emails' %}" class="btn btn-primary operations-button">
           Send New User Emails
         </a>
       </div>
@@ -43,10 +56,16 @@
     document.addEventListener("DOMContentLoaded", function () {
       const input = document.getElementById("excel_file");
       const fileName = document.getElementById("selected-file-name");
+      const submitButton = document.getElementById("operations-upload-submit");
       if (!input || !fileName) return;
       input.addEventListener("change", function () {
-        fileName.textContent =
-          input.files && input.files[0] ? input.files[0].name : "No file selected";
+        if (input.files && input.files[0]) {
+          fileName.textContent = "Uploading: " + input.files[0].name;
+          submitButton.style.display = "block";
+        } else {
+          fileName.textContent = "Upload: Nothing Selected";
+          submitButton.style.display = "none";
+        }
       });
     });
   </script>

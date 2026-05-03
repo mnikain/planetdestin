@@ -196,6 +196,24 @@ body {
   gap: 1rem;
 }
 
+.operations-vrbo-line {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.operations-vrbo-last-pull {
+  font-size: 0.8rem;
+  color: var(--color-slate-700);
+}
+
+.operations-vrbo-last-pull--muted {
+  color: var(--color-slate-500);
+  font-style: italic;
+}
+
 .operations-upload-form {
   display: flex;
   flex-direction: column;
@@ -214,30 +232,9 @@ body {
   display: none;
 }
 
-.material-upload-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  width: fit-content;
-  border-radius: 999px;
-  border: 1px solid #dadce0;
-  background-color: #fff;
-  color: #3c4043;
-  padding: 0.5rem 0.95rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  line-height: 1;
-  cursor: pointer;
-}
 
-.material-upload-btn:hover {
-  background-color: #f8f9fa;
-  border-color: #c6c6c6;
-}
-
-.material-upload-icon {
-  font-size: 1.125rem;
-  line-height: 1;
+.operations-button {
+  width: 16rem;
 }
 
 .material-upload-filename {
@@ -245,30 +242,20 @@ body {
   color: #5f6368;
 }
 
+/* Icon-only upload control: same fill as .btn-primary / “Upload accounting spreadsheet” */
 .operations-upload-submit {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  width: fit-content;
-  border-radius: 999px;
-  border: 1px solid #1a73e8;
-  background-color: #1a73e8;
-  color: #fff;
-  box-shadow: none;
+  padding-inline: 0.65rem;
 }
 
-.operations-upload-submit .material-upload-icon {
-  color: #fff;
-}
-
-.operations-upload-submit:hover {
-  background-color: #1765cc;
-  border-color: #1765cc;
+.operations-upload-submit-icon {
+  font-size: 1.125rem;
+  line-height: 1;
+  color: inherit;
 }
 
 .operations-upload-submit:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.25);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.35);
 }
 
 .messages-container {

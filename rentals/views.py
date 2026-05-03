@@ -26,7 +26,20 @@ import re
 from django.contrib.auth import get_user_model
 
 PENDING_INQUIRY_SESSION_KEY = "pending_inquiry"
+VRBO_CALENDAR_LAST_PULL_AT_KEY = "vrbo_calendar_last_pull_at"
+# Keep last-pull time long after the rate-limit key expires so Operations can still show it.
+VRBO_CALENDAR_LAST_PULL_CACHE_TIMEOUT = 60 * 60 * 24 * 366
 User = get_user_model()
+
+
+def _operations_context(extra: dict | None = None) -> dict:
+    raw = cache.get(VRBO_CALENDAR_LAST_PULL_AT_KEY)
+    if raw is not None:
+        raw = timezone.localtime(raw)
+    ctx = {"vrbo_last_pull_at": raw}
+    if extra:
+        ctx.update(extra)
+    return ctx
 
 def send_email(subject: str, message: str):
     for email in settings.NOTIFICATION_EMAIL_LIST:
@@ -52,13 +65,13 @@ def send_inquiry_email():
 def send_new_user_emails(request: HttpRequest) -> HttpResponse:
     #for now send a message saying function not yet implemented 
     messages.error(request, "Function not yet implemented")
-    return render(request, "rentals/operations.html", {})
+    return render(request, "rentals/operations.html", _operations_context())
 
     #IMPLEMENT LATER
     new_users = User.objects.filter(is_new=True)
     for user in new_users:
         send_email("New user", f"A new user has been created: {user.email}")
-    return render(request, "rentals/operations.html", {})
+    return render(request, "rentals/operations.html", _operations_context())
 
 def _build_inquiry_payload(request: HttpRequest):
     unit = request.POST.get("unit")
@@ -209,8 +222,13 @@ def pull_vrbo_calendar(request: HttpRequest) -> HttpResponse:
     if errors:
         messages.error(request, "\n".join(errors))
     else:
-        messages.success(request, "VRBO calendar has been pulled successfully.")    
-    return render(request, "rentals/operations.html", {}) 
+        messages.success(request, "VRBO calendar has been pulled successfully.")
+        cache.set(
+            VRBO_CALENDAR_LAST_PULL_AT_KEY,
+            timezone.now(),
+            timeout=VRBO_CALENDAR_LAST_PULL_CACHE_TIMEOUT,
+        )
+    return render(request, "rentals/operations.html", _operations_context())
 
 def reservation_search(request: HttpRequest, vrbo_uptodate: bool = False) -> HttpResponse:
     available_units = None
@@ -372,7 +390,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     return render(request, "rentals/dashboard.html", context)
 
 def operations(request: HttpRequest) -> HttpResponse:
-    return render(request, "rentals/operations.html", {})
+    return render(request, "rentals/operations.html", _operations_context())
 
 
 def _split_name(name_str):
@@ -480,5 +498,5 @@ def upload_accounting_file(request: HttpRequest) -> HttpResponse:
                 new_reservation_count += 1
             
         messages.success(request, f"Updated: {count}, added: {new_reservation_count}, new users: {new_user_count}, total records: {len(df)}")
-        return render(request, "rentals/operations.html", {})
+        return render(request, "rentals/operations.html", _operations_context())
 
