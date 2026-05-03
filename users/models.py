@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser,BaseUserManager
 from django import forms
+import re
+import phonenumbers
 
 
 class CustomUserManager(BaseUserManager):
@@ -38,8 +40,13 @@ class CustomUser(AbstractUser):
 
     objects = CustomUserManager()
 
+    def save(self, *args, **kwargs):
+        if self.phone:
+            self.phone = phonenumbers.format_number(phonenumbers.parse(self.phone, "US"), phonenumbers.PhoneNumberFormat.E164)
+        else:
+            self.phone = None
 
+        super().save(*args, **kwargs)
+        
     def __str__(self):
         return self.email
-
-

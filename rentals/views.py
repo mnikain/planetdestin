@@ -49,6 +49,16 @@ def send_inquiry_email():
         return f"Error sending inquiry email: {e}"
     return None
 
+def send_new_user_emails(request: HttpRequest) -> HttpResponse:
+    #for now send a message saying function not yet implemented 
+    messages.error(request, "Function not yet implemented")
+    return render(request, "rentals/operations.html", {})
+
+    #IMPLEMENT LATER
+    new_users = User.objects.filter(is_new=True)
+    for user in new_users:
+        send_email("New user", f"A new user has been created: {user.email}")
+    return render(request, "rentals/operations.html", {})
 
 def _build_inquiry_payload(request: HttpRequest):
     unit = request.POST.get("unit")
@@ -277,8 +287,6 @@ def create_inquiry(request: HttpRequest) -> HttpResponse:
         return _complete_pending_inquiry(request)
 
  
-
-
 
 def _aware_local(dt: datetime) -> datetime:
     tz = timezone.get_current_timezone()

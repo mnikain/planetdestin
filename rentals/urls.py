@@ -12,5 +12,6 @@ urlpatterns = [
     path("pull_vrbo_calendar/", views.pull_vrbo_calendar, name="pull_vrbo_calendar"),
     path("operations/", views.operations, name="operations"),
     path("upload_accounting_file/", views.upload_accounting_file, name="upload_accounting_file"),
+    path("send_new_user_emails/", views.send_new_user_emails, name="send_new_user_emails"),
 ]
 

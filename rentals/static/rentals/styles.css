@@ -152,6 +152,125 @@ body {
   display: none;
 }
 
+.btn-material-custom {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  border-radius: 999px;
+  border: 1px solid #dadce0;
+  background-color: #fff;
+  color: #3c4043;
+}
+
+.btn-material-custom:hover {
+  background-color: #f8f9fa;
+  border-color: #c6c6c6;
+}
+
+.btn-material-custom-icon {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.operations-section {
+  background-color: var(--color-sky-50);
+}
+
+.operations-inner {
+  max-width: 52rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 3rem;
+}
+
+.operations-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-slate-900);
+}
+
+.operations-actions {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.operations-upload-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  max-width: 22rem;
+}
+
+.operations-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.material-upload-input {
+  display: none;
+}
+
+.material-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: fit-content;
+  border-radius: 999px;
+  border: 1px solid #dadce0;
+  background-color: #fff;
+  color: #3c4043;
+  padding: 0.5rem 0.95rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.material-upload-btn:hover {
+  background-color: #f8f9fa;
+  border-color: #c6c6c6;
+}
+
+.material-upload-icon {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+
+.material-upload-filename {
+  font-size: 0.8rem;
+  color: #5f6368;
+}
+
+.operations-upload-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  border-radius: 999px;
+  border: 1px solid #1a73e8;
+  background-color: #1a73e8;
+  color: #fff;
+  box-shadow: none;
+}
+
+.operations-upload-submit .material-upload-icon {
+  color: #fff;
+}
+
+.operations-upload-submit:hover {
+  background-color: #1765cc;
+  border-color: #1765cc;
+}
+
+.operations-upload-submit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.25);
+}
+
 .messages-container {
   max-width: 48rem;
   margin: 1rem auto 0;
@@ -204,6 +323,16 @@ body {
   display: flex;
   align-items: flex-start;
   color: var(--color-slate-900);
+}
+.hero-bg {
+  background-image: linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.25),
+      rgba(255, 255, 255, 0.05)
+    ),
+    url("/static/rentals/tides.jpg");
+  background-size: cover;
+  background-position: center top;
 }
 
 .hero-inner {

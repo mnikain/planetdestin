@@ -22,27 +22,15 @@ class UserRegistrationForm(UserCreationForm):
         help_text="Required. We’ll send booking details here.",
     )
     phone = PhoneNumberField(
-        required=False,
+        required=True,
         region="US",
-        help_text="optional, if provided, you can use login using phone or email",
+        help_text="Required, You can use either email or phone to login",
     )
     class Meta(UserCreationForm.Meta):
         model = User
         #fields = UserCreationForm.Meta.fields + ("email", "phone")
         fields = ('first_name', 'last_name', 'email', 'phone', 'password1', 'password2')
 
-    def clean_phone(self):
-        raw_phone = (self.data.get("phone") or "").strip()
-        digits_only = re.sub(r"\D", "", raw_phone)
-
-        # If someone enters exactly 10 digits, assume a US number.
-        if raw_phone and len(digits_only) == 10 and not raw_phone.startswith("+"):
-            raw_phone = f"+1{digits_only}"
-
-        cleaned_phone = self.fields["phone"].clean(raw_phone)
-        if cleaned_phone:
-            return cleaned_phone.as_e164
-        return cleaned_phone
     def save(self, commit=True):
         user = super().save(commit=False)
         user.email = self.cleaned_data["email"]

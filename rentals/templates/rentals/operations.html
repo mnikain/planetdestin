@@ -1,27 +1,53 @@
 {% extends "rentals/base.html" %}
+{% load static %}
 
 {% block content %}
   <section class="operations-section">
     <div class="operations-inner">
       <h1 class="operations-title">Operations</h1>
-    </div>
 
-    <div class="operations-actions">
-        <a
-              href="{% url 'pull_vrbo_calendar' %}"
-              class="btn btn-primary"
-            >
-              Refresh VRBO Calendar
+      <div class="operations-actions">
+        <a href="{% url 'pull_vrbo_calendar' %}" class="btn btn-primary">
+          Refresh VRBO Calendar
         </a>
-        <!-- upload excel file with reservations from Ali's spreadsheet  -->
-        <p>&nbsp;</p>
-            <form method="post" action="{% url 'upload_accounting_file' %}" enctype="multipart/form-data">
-                {% csrf_token %}
-                <label for="excel_file">Upload Ali's spreadsheet here:</label>
-                <input type="file" name="excel_file" id="excel_file" class="btn btn-primary">
-                <button type="submit" class="btn btn-primary">Upload</button>
-            </form>
+      </div>
 
+      <div class="operations-actions">
+        <form
+          method="post"
+          action="{% url 'upload_accounting_file' %}"
+          enctype="multipart/form-data"
+          class="operations-upload-form"
+        >
+          {% csrf_token %}
+          <span class="operations-upload-row">
+            <label for="excel_file" class="btn btn-primary" role="button">
+              <span id="selected-file-name">Upload accounting spreadsheet</span>
+            </label>
+            <input type="file" name="excel_file" id="excel_file" class="material-upload-input" />
+            <button type="submit" class="btn operations-upload-submit material-symbols-outlined material-upload-icon">upload_file</button>
+          </span>
+
+        </form>
+      </div>
+
+      <div class="operations-actions">
+        <a href="{% url 'send_new_user_emails' %}" class="btn btn-primary">
+          Send New User Emails
+        </a>
+      </div>
     </div>
   </section>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const input = document.getElementById("excel_file");
+      const fileName = document.getElementById("selected-file-name");
+      if (!input || !fileName) return;
+      input.addEventListener("change", function () {
+        fileName.textContent =
+          input.files && input.files[0] ? input.files[0].name : "No file selected";
+      });
+    });
+  </script>
 {% endblock %}

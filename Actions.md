@@ -17,16 +17,22 @@
     2. add hthe property number to the unit information (VRBO CSV download uses it) Done
     3. add a GUI to import the csv's (should be able do one or more) DONE
     
-    4. Phone numbers are not properly formatted when added to users from spreadsheet
+    4. Phone numbers are not properly formatted when added to users from spreadsheet  DONE
     5. if a user exists but has no password, then offer to send them email with the password DONE
     6. Handle the phone number situation (created from spreadsheet may not match the user, but key on email ) DONE
-    7. if phone is different from vrbo, then save it as a secondary phone?  TODO
+
     8. Reset emails sent to me right now, change it later to the customer
 
-    4. Add a report that says pull is needed (no email since also does it regularly)
-    5. if the user is created through spreadsheet, then send them an email (if they have one)
+    4. Add a report that says pull is needed (no email since also does it regularly) -  Admin screen shoudl show that
+
+
+# Deferred items/ QUestioms
+    7. if phone is different from vrbo, then save it as a secondary phone?  DEFER
+    8. Should we send emails inviting them? What if we send too many emails?
+        add a button with a list of new users; allow the admin to send them emails asking them if they want a 
+         password to login and get one.
+         if the user is created through spreadsheet, then send them an email (if they have one)
         with a tmp password and let them know (have a field that says new user); if they didn't have
-        an email or need to get in, add a button to send an email
 
 # PRODUCTION CHECKLIST
     1. Set SESSION_COOKIE_SECURE to true in settings.py
